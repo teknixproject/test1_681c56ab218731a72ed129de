@@ -2,10 +2,11 @@
 
 import _ from 'lodash';
 import { CSSProperties, useMemo } from 'react';
-import styled, { css } from 'styled-components';
 
 import { useActions } from '@/hooks/useActions';
 import { GridItem } from '@/types/gridItem';
+
+import { StyleBox } from './StyleBox';
 
 interface BackgroundCompoProps {
   data?: GridItem;
@@ -28,24 +29,22 @@ const BackgroundCompo = ({ data, style }: BackgroundCompoProps) => {
   );
 
   return (
-    <Container
-      id="background-compo"
-      style={computedStyle}
-      styledComponentCss={data?.styledComponentCss}
-      onClick={() => handleAction('onClick')}
-      onChange={() => handleAction('onChange')}
-    >
+    <>
       {url ? (
         url.match(/\.(jpeg|jpg|gif|png|svg|webp)$/i) ? (
-          <CsImg
+          <StyleBox
+            as={'img'}
             style={computedStyle}
             src={url}
             alt="Preview"
             className="w-full"
             styledComponentCss={data?.styledComponentCss}
+            onClick={() => handleAction('onClick')}
+            onChange={() => handleAction('onChange')}
           />
         ) : url.match(/\.(mp4|mov|avi|mkv|webm)$/i) ? (
-          <CsVideo
+          <StyleBox
+            as={'video'}
             style={computedStyle}
             autoPlay
             loop
@@ -55,51 +54,18 @@ const BackgroundCompo = ({ data, style }: BackgroundCompoProps) => {
             src={url}
             preload="metadata"
             styledComponentCss={data?.styledComponentCss}
+            onClick={() => handleAction('onClick')}
+            onChange={() => handleAction('onChange')}
           >
             <source src={`${url}.webm`} type="video/webm" />
             <source src={url} type="video/mp4" />
-          </CsVideo>
+          </StyleBox>
         ) : (
           <p>Unsupported media type</p>
         )
       ) : null}
-    </Container>
+    </>
   );
 };
-
-interface StylesProps {
-  style?: {
-    hover?: CSSProperties;
-    [key: string]: any;
-  };
-  styledComponentCss?: string;
-}
-
-const Container = styled.div<StylesProps>`
-  ${(props) =>
-    props.styledComponentCss
-      ? css`
-          ${props.styledComponentCss}
-        `
-      : ''}
-`;
-
-const CsImg = styled.img<StylesProps>`
-  ${(props) =>
-    props.styledComponentCss
-      ? css`
-          ${props.styledComponentCss}
-        `
-      : ''}
-`;
-
-const CsVideo = styled.video<StylesProps>`
-  ${(props) =>
-    props.styledComponentCss
-      ? css`
-          ${props.styledComponentCss}
-        `
-      : ''}
-`;
 
 export default BackgroundCompo;

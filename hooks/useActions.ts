@@ -1,10 +1,17 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import _ from 'lodash';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
-    TAction, TActionApiCall, TActionCustomFunction, TActionLoop, TActionNavigate,
-    TActionUpdateState, TConditional, TTriggerActions, TTriggerValue
+  TAction,
+  TActionApiCall,
+  TActionCustomFunction,
+  TActionLoop,
+  TActionNavigate,
+  TActionUpdateState,
+  TConditional,
+  TTriggerActions,
+  TTriggerValue,
 } from '@/types';
 import { GridItem } from '@/types/gridItem';
 
@@ -17,12 +24,18 @@ import { useNavigateAction } from './useNavigateAction';
 import { useUpdateStateAction } from './useUpdateStateAction';
 
 export type TUseActions = {
-  handleAction: (triggerType: TTriggerValue, action?: TTriggerActions) => Promise<void>;
+  handleAction: (
+    triggerType: TTriggerValue,
+    action?: TTriggerActions,
+    formData?: Record<string, any>
+  ) => Promise<void>;
+  isLoading: boolean;
 };
 
 export const useActions = (data?: GridItem): TUseActions => {
   const actions = useMemo(() => _.get(data, 'actions') as TTriggerActions, [data]);
-  const { setMultipleActions } = actionHookSliceStore();
+  const setMultipleActions = actionHookSliceStore((state) => state.setMultipleActions);
+  const [isLoading, setIsLoading] = useState(false);
 
   const executeActionFCType = async (action?: TAction): Promise<void> => {
     if (!action?.fcType) return;
@@ -61,6 +74,7 @@ export const useActions = (data?: GridItem): TUseActions => {
       mounted.current = false;
     };
   }, []);
+
   const executeAction = async (action: TAction): Promise<void> => {
     if (!action) return;
 
@@ -84,12 +98,16 @@ export const useActions = (data?: GridItem): TUseActions => {
 
   const executeTriggerActions = async (
     triggerActions: TTriggerActions,
-    triggerType: TTriggerValue
+    triggerType: TTriggerValue,
+    formData?: Record<string, any>
   ): Promise<void> => {
+    console.log('🚀 ~ useActions ~ formData:', formData);
     const actionsToExecute = triggerActions[triggerType];
-    setMultipleActions({
+
+    await setMultipleActions({
       actions: triggerActions,
       triggerName: triggerType,
+      formData,
     });
     if (!actionsToExecute) return;
 
@@ -102,10 +120,19 @@ export const useActions = (data?: GridItem): TUseActions => {
       await executeActionFCType(rootAction);
     }
   };
+
   const handleAction = useCallback(
-    async (triggerType: TTriggerValue, action?: TTriggerActions): Promise<void> => {
-      if (!data?.actions) return;
-      await executeTriggerActions(action || data.actions, triggerType);
+    async (
+      triggerType: TTriggerValue,
+      action?: TTriggerActions,
+      formData?: Record<string, any>
+    ): Promise<void> => {
+      setIsLoading(true);
+      try {
+        await executeTriggerActions(action || data?.actions || {}, triggerType, formData);
+      } finally {
+        setIsLoading(false);
+      }
     },
     [data?.actions, executeTriggerActions]
   );
@@ -115,9 +142,6 @@ export const useActions = (data?: GridItem): TUseActions => {
       handleAction('onPageLoad');
     }
   }, [mounted.current]);
-  if (!data)
-    return {
-      handleAction: () => Promise.resolve(),
-    };
-  return { handleAction };
+
+  return { handleAction, isLoading };
 };

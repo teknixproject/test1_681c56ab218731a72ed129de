@@ -7,7 +7,7 @@ import { GridItem } from '@/types/gridItem';
 export interface GridSystemProps {
   page?: GridItem;
   layoutId?: string;
-  deviceType: string;
+  deviceType?: string;
   isHeader?: boolean;
   isBody?: boolean;
   isFooter?: boolean;

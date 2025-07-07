@@ -30,9 +30,10 @@ export type TCombineText = {
   style: React.CSSProperties & { textGradient?: string };
 }[];
 export type TData = {
-  type: keyof Omit<TData, 'type'>;
+  type: keyof Omit<TData, 'type'> & 'parameters';
   itemInList: { jsonPath?: string };
   combineText?: TCombineText;
+  dynamicGenerate?: TDataField;
   apiResponse?: TDataField;
   appState?: TDataField;
   componentState?: TDataField;
@@ -46,4 +47,5 @@ export type TData = {
   };
   valueInput?: string;
   defaultValue?: string;
+  temp: any;
 };

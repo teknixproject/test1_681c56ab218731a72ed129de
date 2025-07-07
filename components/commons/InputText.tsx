@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import React, { ChangeEvent, useMemo } from 'react';
-import styled, { css, CSSProperties } from 'styled-components';
+import { CSSProperties } from 'styled-components';
 import { useDebouncedCallback } from 'use-debounce';
 
 import { useActions } from '@/hooks/useActions';
@@ -10,6 +10,8 @@ import { useUpdateData } from '@/hooks/useUpdateData';
 import { cn } from '@/lib/utils';
 import { GridItem } from '@/types/gridItem';
 import { Icon } from '@iconify/react/dist/iconify.js';
+
+import { StyleBox } from './StyleBox';
 
 type Props = { data: GridItem };
 
@@ -52,44 +54,29 @@ const InputText: React.FC<Props> = ({ data }) => {
     }
   };
   return (
-    <div className="w-full flex items-center gap-1">
+    <StyleBox
+      className="w-full flex items-center gap-1"
+      style={newStyle}
+      styledComponentCss={data?.styledComponentCss}
+    >
       {prefixIcon && (
         <div className="">
           <Icon icon={prefixIcon} width="24" height="24" />
         </div>
       )}
-      <CsInput
+      <input
         className={cn('w-full h-full outline-none')}
-        style={newStyle}
         onChange={handleInputChange}
         defaultValue={dataState as string}
         onKeyDown={handleEnter}
-        styledComponentCss={data?.styledComponentCss}
       />
       {suffixIcon && (
         <div className="">
           <Icon icon={suffixIcon} width="24" height="24" />
         </div>
       )}
-    </div>
+    </StyleBox>
   );
 };
-
-interface StylesProps {
-  style?: {
-    hover?: CSSProperties;
-    [key: string]: any;
-  };
-  styledComponentCss?: string;
-}
-
-const CsInput = styled.input<StylesProps>`
-  ${(props) =>
-    props.styledComponentCss
-      ? css`
-          ${props.styledComponentCss}
-        `
-      : ''}
-`;
 
 export default InputText;

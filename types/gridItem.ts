@@ -3,7 +3,7 @@ import { TData } from './dataItem';
 
 interface GridItem {
   _id?: string;
-  id?: string; // Optional slice ID for identifying slices
+  id: string; // Optional slice ID for identifying slices
   columns?: string; // Number of columns (for grid layout)
   rows?: string; // Number of rows (for grid layout)
   colspan?: string; // Number of columns to span
@@ -26,12 +26,12 @@ interface GridItem {
   //   style_tablet: React.CSSProperties;
   //   style_mobile: React.CSSProperties;
   // };
+  style?: React.CSSProperties;
   dataSlice?: any; // Data to render in the component
   style_pc?: React.CSSProperties;
   style_laptop?: React.CSSProperties;
   style_tablet?: React.CSSProperties;
   style_mobile?: React.CSSProperties;
-  style?: string;
   value?: string; // Value to render in the component
   valueRender?: ValueRender;
   dynamicGenerate?: TDynamicGenerate;
@@ -46,6 +46,7 @@ interface GridItem {
   styledComponentCss?: string;
   props?: any;
   data?: TData;
+  componentProps: any;
 }
 export type TInputText = {
   prefixIcon?: string;
@@ -63,8 +64,10 @@ export type TCollapse = {
   childs: { value: string }[];
 };
 export type TDynamicGenerate = {
-  dataJsonPath?: string;
-  apiCall?: { id: string; name: string };
+  variableId: string;
+  list: TData;
+  maxItems: TData;
+  variableName: string;
 };
 export type TValueFields = {
   total: string;

@@ -6,7 +6,12 @@ import { useCallback } from 'react';
 import { stateManagementStore } from '@/stores';
 import { authSettingStore } from '@/stores/authSetting';
 import {
-    TAction, TActionApiCall, TActionCustomFunction, TActionVariable, TApiCallValue, TApiCallVariable
+  TAction,
+  TActionApiCall,
+  TActionCustomFunction,
+  TActionVariable,
+  TApiCallValue,
+  TApiCallVariable,
 } from '@/types';
 import { variableUtil } from '@/uitls';
 
@@ -28,14 +33,14 @@ export const useApiCallAction = ({ executeActionFCType }: TProps): TUseActions =
   const router = useRouter();
   const { getApiMember } = useApiCall();
   const { getData } = useHandleData({});
-  const findAction = actionHookSliceStore((state) => state.findAction);
   const refreshAction = authSettingStore((state) => state.refreshAction);
   const entryPage = authSettingStore((state) => state.entryPage);
   const forbiddenCode = authSettingStore((state) => state.forbiddenCode);
   const findVariable = stateManagementStore((state) => state.findVariable);
   const updateVariables = stateManagementStore((state) => state.updateVariables);
   const { handleCustomFunction } = useCustomFunction({ executeActionFCType });
-
+  const { findAction } = actionHookSliceStore();
+  const { getState } = actionHookSliceStore;
   const convertActionVariables = useCallback(
     (actionVariables: TActionVariable[], apiCall: TApiCallValue): any[] => {
       if (_.isEmpty(actionVariables)) return [];
@@ -186,12 +191,10 @@ export const useApiCallAction = ({ executeActionFCType }: TProps): TUseActions =
   };
   const handleRefreshToken = async (apiCall: TApiCallValue, body: object, variableId: string) => {
     try {
-      console.log('🚀 ~ handleRefreshToken ~ refreshAction:', refreshAction);
       if (refreshAction) {
         const rootAction = Object.values(refreshAction?.onClick || {})?.find(
           (item) => item.parentId === null
         );
-        console.log('🚀 ~ handleRefreshToken ~ rootAction:', rootAction);
         await handleCustomFunction(rootAction as TAction<TActionCustomFunction>);
 
         await makeApiCall(apiCall, body, variableId);
@@ -205,9 +208,12 @@ export const useApiCallAction = ({ executeActionFCType }: TProps): TUseActions =
     const apiCall = getApiMember(action?.data?.apiId ?? '');
 
     if (!apiCall) return;
-
+    const triggerName = getState().triggerName;
+    const formData = getState().formData;
     const variables = convertActionVariables(action?.data?.variables ?? [], apiCall);
-    const newBody = convertApiCallBody(apiCall?.body, variables);
+    const newBody =
+      triggerName === 'onSubmit' ? formData : convertApiCallBody(apiCall?.body, variables);
+
     const result = await makeApiCall(apiCall, newBody, action?.data?.output?.variableId ?? '');
 
     // handleApiResponse(result, action?.data?.output ?? {});

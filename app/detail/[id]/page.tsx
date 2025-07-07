@@ -4,7 +4,7 @@ import EntryPage from '@/components/page/EntryPage';
 
 type Props = object;
 
-const HomePage: React.FC<Props> = ({}) => {
+const HomePage: React.FC<Props> = async ({}) => {
   return <EntryPage />;
 };
 

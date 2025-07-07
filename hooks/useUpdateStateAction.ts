@@ -37,6 +37,8 @@ export const useUpdateStateAction = ({ executeActionFCType }: TProps): TUseActio
 
   const handleUpdateStateAction = async (action: TAction<TActionUpdateState>): Promise<void> => {
     const updates = action?.data?.update;
+    console.log('🚀 ~ handleUpdateStateAction ~ updates:', updates);
+
     if (_.isEmpty(updates)) return;
 
     for (const item of updates || []) {

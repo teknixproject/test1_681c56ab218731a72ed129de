@@ -1,53 +1,38 @@
 'use client';
 
-import { useEffect } from 'react';
-import ReactModal from 'react-modal';
-
+import { Dialog, DialogContent, DialogOverlay } from '@/components/ui/dialog';
 import { useHandleData } from '@/hooks/useHandleData';
 import { useUpdateData } from '@/hooks/useUpdateData';
+import { GridItem } from '@/types/gridItem';
+
+import { RenderSlice } from '../grid-systems';
 
 interface ModalProps {
   data: any;
-  children?: any;
   [key: string]: unknown;
 }
 
-const Modal = ({ children, data, ...props }: ModalProps) => {
+const Modal = ({ data, ...props }: ModalProps) => {
   const { dataState } = useHandleData({ dataProp: data?.data });
 
   const { updateData } = useUpdateData({ dataProp: data?.data });
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const appRoot = document.getElementById('__next');
-      if (appRoot) {
-        ReactModal.setAppElement(appRoot);
-      }
-    }
-  }, []);
+  console.log('ModalModal', Modal);
 
   return (
-    <ReactModal
-      isOpen={dataState}
-      onRequestClose={updateData}
-      shouldCloseOnOverlayClick={true}
-      style={{
-        content: {
-          position: 'absolute',
-          background: 'lightblue',
-          padding: '30px',
-          borderRadius: '10px',
-          margin: 'auto',
-          zIndex: 1000,
-        },
-        overlay: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        },
-      }}
-      {...props}
-    >
-      {children}
-    </ReactModal>
+    <Dialog open={dataState} onOpenChange={updateData}>
+      <DialogOverlay />
+      <DialogContent
+        style={{
+          ...data?.style,
+        }}
+        {...props}
+      >
+        {data?.childs?.map((item: GridItem) => (
+          <RenderSlice slice={item} key={item.id} />
+        ))}
+      </DialogContent>
+    </Dialog>
   );
 };
 

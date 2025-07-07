@@ -41,7 +41,13 @@ export type TOperatorCompare =
   | 'lessThan'
   | 'greaterThanOrEqual'
   | 'lessThanOrEqual';
-export type TTriggerValue = 'onPageLoad' | 'onClick' | 'onEnter' | 'onMouseDown' | 'onChange';
+export type TTriggerValue =
+  | 'onPageLoad'
+  | 'onClick'
+  | 'onEnter'
+  | 'onMouseDown'
+  | 'onChange'
+  | 'onSubmit';
 export const OPERATORS: {
   name: string;
   value: TOperatorCompare;

@@ -13,8 +13,7 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
-export function useConstructorDataAPI(pageName?: string) {
-  console.log('🚀 ~ useConstructorDataAPI ~ pageName:', pageName);
+export function useConstructorDataAPI(uid?: string) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
   const {
@@ -27,7 +26,7 @@ export function useConstructorDataAPI(pageName?: string) {
   } = useLayoutContext();
 
   const { data, error, isLoading } = useSWR(
-    pageName ? `${API_URL}/api/client/getLayout?pId=${projectId}&uid=${pageName}` : null,
+    uid ? `${API_URL}/api/client/getLayout?pId=${projectId}&uid=${uid}` : null,
     fetcher,
     { revalidateOnFocus: false, refreshInterval: 60000 }
   );

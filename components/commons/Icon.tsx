@@ -9,13 +9,24 @@ interface IconCompoProps {
   style?: CSSProperties;
 }
 
-const IconCompo = ({ data }: IconCompoProps) => {
+const IconCompo = ({ data, style }: IconCompoProps) => {
   const url = _.get(data, 'media.url');
   const { handleAction } = useActions();
   return url ? (
-    <img src={url} alt="Image" className="w-full h-full" onClick={() => handleAction('onClick')} />
+    <img
+      src={url}
+      alt="Image"
+      className="w-full h-full"
+      style={style}
+      onClick={() => handleAction('onClick')}
+    />
   ) : (
-    <img src="/default-icon.png" alt="default-icon" onClick={() => handleAction('onClick')} />
+    <img
+      src="/default-icon.png"
+      alt="default-icon"
+      style={style}
+      onClick={() => handleAction('onClick')}
+    />
   );
 };
 

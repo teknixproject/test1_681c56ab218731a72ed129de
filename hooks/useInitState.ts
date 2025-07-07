@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import _ from 'lodash';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useConstructorDataAPI, usePreviewUI } from '@/app/actions/use-constructor';
 import { getDeviceType } from '@/lib/utils';
@@ -17,124 +17,190 @@ import { getMatchingRoutePattern } from '@/uitls/pathname';
 
 type DeviceType = 'mobile' | 'desktop';
 
-//#region State Preview
-export const useInitStatePreview = () => {
+interface SearchParams {
+  uid: string | null;
+  customWidgetName: string | null;
+  projectId: string | null;
+  sectionName: string | null;
+  userId: string | null;
+}
+
+// Custom hook for search params
+const useSearchParamsData = (): SearchParams => {
   const searchParams = useSearchParams();
-  const uid = searchParams.get('uid');
-  const customWidgetName = searchParams.get('customWidgetName');
-  const projectId = searchParams.get('projectId');
-  const sectionName = searchParams.get('sectionName');
-  const userId = searchParams.get('userId');
-  const setCustomFunctions = customFunctionStore((state) => state.setCustomFunctions);
 
-  //#region store
-  const { addAndUpdateApiResource } = apiResourceStore();
-  const { setStateManagement } = stateManagementStore();
-  const resetAuthSettings = authSettingStore((state) => state.reset);
+  return useMemo(
+    () => ({
+      uid: searchParams.get('uid'),
+      customWidgetName: searchParams.get('customWidgetName'),
+      projectId: searchParams.get('projectId'),
+      sectionName: searchParams.get('sectionName'),
+      userId: searchParams.get('userId'),
+    }),
+    [searchParams]
+  );
+};
 
-  // #region hooks
-  const [deviceType, setDeviceType] = useState(getDeviceType());
-  const { dataPreviewUI, isLoading } = usePreviewUI(projectId ?? '', uid, sectionName, userId);
+// Custom hook for device type management
+const useDeviceType = () => {
+  const [deviceType, setDeviceType] = useState(() => getDeviceType());
 
-  // #region state
-  const isPage = _.get(dataPreviewUI, 'typePreview') === 'page';
-  const state = _.get(dataPreviewUI, 'state');
-
-  const headerLayout = dataPreviewUI?.headerLayout?.layoutJson || dataPreviewUI?.headerLayout;
-  const bodyLayout = dataPreviewUI?.bodyLayout?.layoutJson || dataPreviewUI?.bodyLayout;
-  const footerLayout = dataPreviewUI?.footerLayout?.layoutJson || dataPreviewUI?.footerLayout;
-
-  const selectedHeaderLayout = !_.isEmpty(headerLayout) ? headerLayout[deviceType] : {};
-  const selectedBodyLayout = !_.isEmpty(bodyLayout) ? bodyLayout[deviceType] : {};
-  const selectedFooterLayout = !_.isEmpty(footerLayout) ? footerLayout[deviceType] : {};
-
-  //#region function
   useEffect(() => {
     const handleResize = () => setDeviceType(getDeviceType());
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // const getActions = async () => {
-  //   try {
-  //     const result = await actionService.getData({
-  //       uid: uid || process.env.NEXT_PUBLIC_DEFAULT_UID || '',
-  //       projectId: projectId || process.env.NEXT_PUBLIC_PROJECT_ID || '',
-  //     });
-  //     if (_.isEmpty(result?.data)) return;
-  //     setActions(result.data);
-  //   } catch (error) {
-  //     console.log('🚀 ~ getStates ~ error:', error);
-  //   }
-  // };
+  return deviceType;
+};
 
-  const getApiCall = async () => {
-    try {
-      const result = await apiCallService.getAll({
-        projectId: projectId || process.env.NEXT_PUBLIC_PROJECT_ID || '',
-      });
-      addAndUpdateApiResource({ apis: result?.data?.apis });
-    } catch (error) {
-      console.log('🚀 ~ getApiCall ~ error:', error);
-    }
-  };
-  const getAuthSettings = async () => {
-    try {
-      const result = await authSettingService.get({ projectId: projectId || '' });
-      resetAuthSettings(result?.data);
-    } catch (error) {
-      console.log('🚀 ~ getAuthSettings ~ error:', error);
-    }
-  };
-  const getCustomFunctions = async () => {
-    try {
-      const result = await customFunctionService.getAll({
-        uid: uid || '',
-        projectId: projectId || process.env.NEXT_PUBLIC_PROJECT_ID || '',
-      });
-      setCustomFunctions(result.data);
-    } catch (error) {
-      console.log('🚀 ~ getCustomFunctions ~ error:', error);
-    }
-  };
+// Custom hook for layout processing
+const useLayoutProcessing = (dataPreviewUI: any, deviceType: string) => {
+  return useMemo(() => {
+    const getLayoutForDevice = (layout: any): any => {
+      if (_.isEmpty(layout)) return {};
+      const layoutData = layout?.layoutJson || layout;
+      return layoutData?.[deviceType] || {};
+    };
 
-  const setStateFormDataPreview = () => {
-    if (!_.isEmpty(state)) {
-      ['appState', 'globalState', 'componentState', 'apiResponse', 'dynamicGenerate'].forEach(
-        (type) => {
-          setStateManagement({
-            type: type as TTypeSelect,
-            dataUpdate: state[type],
-          });
-        }
-      );
-    }
-  };
+    return {
+      selectedHeaderLayout: getLayoutForDevice(dataPreviewUI?.headerLayout),
+      selectedBodyLayout: getLayoutForDevice(dataPreviewUI?.bodyLayout),
+      selectedFooterLayout: getLayoutForDevice(dataPreviewUI?.footerLayout),
+    };
+  }, [dataPreviewUI, deviceType]);
+};
 
+export const useInitStatePreview = () => {
+  // Extract search params
+  const { uid, customWidgetName, projectId, sectionName, userId } = useSearchParamsData();
+
+  // Store actions
+  const { addAndUpdateApiResource } = apiResourceStore();
+  const { setStateManagement } = stateManagementStore();
+  const setCustomFunctions = customFunctionStore((state) => state.setCustomFunctions);
+  const resetAuthSettings = authSettingStore((state) => state.reset);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  // Device type management
+  const deviceType = useDeviceType();
+
+  // Data fetching
+  const { dataPreviewUI, isLoading } = usePreviewUI(projectId ?? '', uid, sectionName, userId);
+
+  // Computed values
+  const isPage = useMemo(() => _.get(dataPreviewUI, 'typePreview') === 'page', [dataPreviewUI]);
+
+  const state = useMemo(() => _.get(dataPreviewUI, 'state'), [dataPreviewUI]);
+
+  // Layout processing
+  const { selectedHeaderLayout, selectedBodyLayout, selectedFooterLayout } = useLayoutProcessing(
+    dataPreviewUI,
+    deviceType
+  );
+
+  // Optimized API calls with error handling
+  const apiCalls = useMemo(() => {
+    const effectiveProjectId = projectId || process.env.NEXT_PUBLIC_PROJECT_ID || '';
+
+    const getApiCall = async (): Promise<void> => {
+      try {
+        const result = await apiCallService.getAll({ projectId: effectiveProjectId });
+        addAndUpdateApiResource({ apis: result?.data?.apis });
+      } catch (error) {
+        console.error('Failed to fetch API calls:', error);
+      }
+    };
+
+    const getAuthSettings = async (): Promise<void> => {
+      if (!projectId) return;
+      try {
+        const result = await authSettingService.get({ projectId });
+        resetAuthSettings(result?.data);
+      } catch (error) {
+        console.error('Failed to fetch auth settings:', error);
+      }
+    };
+
+    const getCustomFunctions = async (): Promise<void> => {
+      if (!uid) return;
+      try {
+        const result = await customFunctionService.getAll({
+          uid,
+          projectId: effectiveProjectId,
+        });
+        setCustomFunctions(result.data);
+      } catch (error) {
+        console.error('Failed to fetch custom functions:', error);
+      }
+    };
+
+    return { getApiCall, getAuthSettings, getCustomFunctions };
+  }, [projectId, uid, addAndUpdateApiResource, resetAuthSettings, setCustomFunctions]);
+
+  // State management setup
+  const setStateFormDataPreview = useCallback(() => {
+    if (_.isEmpty(state)) return;
+
+    const stateTypes: TTypeSelect[] = [
+      'appState',
+      'globalState',
+      'componentState',
+      'apiResponse',
+      'dynamicGenerate',
+    ];
+
+    stateTypes.forEach((type) => {
+      if (state[type]) {
+        setStateManagement({
+          type,
+          dataUpdate: state[type],
+        });
+      }
+    });
+  }, [state, setStateManagement]);
+
+  // Effect for data initialization
   useEffect(() => {
-    async function fetchData() {
-      await Promise.all([
-        setStateFormDataPreview(),
-        // getActions(),
-        getApiCall(),
-        getCustomFunctions(),
-        getAuthSettings(),
-      ]);
-    }
-    fetchData();
-  }, [uid, projectId, bodyLayout]);
+    if (!uid || !projectId) return;
 
+    const initializeData = async () => {
+      try {
+        await Promise.allSettled([
+          setStateFormDataPreview(),
+          apiCalls.getApiCall(),
+          apiCalls.getCustomFunctions(),
+          apiCalls.getAuthSettings(),
+        ]);
+      } catch (error) {
+        console.error('Failed to initialize data:', error);
+      }
+    };
+    setLoading(true);
+    initializeData();
+    setLoading(false);
+  }, [uid, projectId, setStateFormDataPreview, apiCalls]);
+
+  // Return optimized values
   return {
+    // Core data
     isPage,
     customWidgetName,
     deviceType,
+
+    // Layout data
     selectedHeaderLayout,
     selectedBodyLayout,
     selectedFooterLayout,
-    isLoading,
+
+    // Loading state
+    isLoading: isLoading || loading,
+
+    // Additional computed values for potential use
+    hasValidParams: !!(uid && projectId),
+    state,
   };
 };
-
 //#region State Render
 const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
 export const useInitStateRender = () => {
@@ -152,7 +218,7 @@ export const useInitStateRender = () => {
     fetchData();
   }, [pathname]);
 
-  const { addAndUpdateApiResource } = apiResourceStore();
+  const addAndUpdateApiResource = apiResourceStore((state) => state.addAndUpdateApiResource);
   const { setStateManagement, findVariable } = stateManagementStore();
   const resetAuthSettings = authSettingStore((state) => state.reset);
 
@@ -163,6 +229,7 @@ export const useInitStateRender = () => {
   const setCustomFunctions = customFunctionStore((state) => state.setCustomFunctions);
   const { enable, pages, entryPage } = authSettingStore();
   const { bodyLayout, isLoading } = useConstructorDataAPI(uid || '/');
+  const [loading, setLoading] = useState<boolean>(false);
 
   const [deviceType, setDeviceType] = useState<DeviceType>(getDeviceType());
   const selectedBodyLayout = bodyLayout[deviceType] ?? bodyLayout ?? {};
@@ -224,19 +291,6 @@ export const useInitStateRender = () => {
     }
   };
 
-  // const getActions = async () => {
-  //   try {
-  //     const result = await actionService.getData({
-  //       uid: uid,
-  //       projectId: projectId || process.env.NEXT_PUBLIC_PROJECT_ID || '',
-  //     });
-  //     if (_.isEmpty(result?.data?.data)) return;
-  //     setActions(result.data.data);
-  //   } catch (error) {
-  //     console.log('🚀 ~ getStates ~ error:', error);
-  //   }
-  // };
-
   const getApiCall = async () => {
     try {
       const result = await apiCallService.getAll({
@@ -289,14 +343,16 @@ export const useInitStateRender = () => {
   }, [enable, findVariable, entryPage, pages, pathname, router]);
   useEffect(() => {
     if (!projectId) return;
+    setLoading(true);
     async function fetchData() {
       await Promise.all([getStates(), getApiCall(), getCustomFunctions(), getAuthSettings()]);
     }
     fetchData();
+    setLoading(false);
   }, [uid, projectId]);
 
   return {
-    isLoading,
+    isLoading: isLoading || loading,
     selectedBodyLayout,
     deviceType,
   };

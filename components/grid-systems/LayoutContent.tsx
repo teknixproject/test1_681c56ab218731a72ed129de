@@ -1,14 +1,14 @@
 'use client';
 import _ from 'lodash';
 import dynamic from 'next/dynamic';
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { getDeviceType } from '@/lib/utils';
-import { useLayoutContext } from '@/context/LayoutContext';
 import { useGetModalUI } from '@/app/actions/use-constructor';
+import { useLayoutContext } from '@/context/LayoutContext';
+import { getDeviceType } from '@/lib/utils';
 
-import LoadingPage from './loadingPage';
 import Modal from '../commons/Modal';
+import LoadingPage from './loadingPage';
 
 const GridSystemContainer = dynamic(() => import('@/components/grid-systems'), {
   loading: () => <LoadingPage />,
@@ -19,7 +19,6 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
   const { headerLayout, footerLayout, headerPosition } = useLayoutContext();
   const [deviceType, setDeviceType] = useState(getDeviceType());
 
-  console.log('LayoutContent', headerLayout);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -54,34 +53,6 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
     };
   }, [headerPosition]);
 
-  const headerStyle = useMemo(() => {
-    if (headerPosition === 'left') {
-      return {
-        // width: '250px',
-        flexShrink: 0,
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        zIndex: 10,
-      };
-    } else if (headerPosition === 'right') {
-      return {
-        // width: '250px',
-        flexShrink: 0,
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        order: 2,
-        zIndex: 10,
-      };
-    }
-    return {
-      position: 'fixed',
-      top: 0,
-      zIndex: 3,
-    };
-  }, [headerPosition]);
-
   return (
     <div className="relative !z-0">
       <div className="z-10" style={containerStyle as any}>
@@ -91,7 +62,12 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
               page={selectedHeaderLayout}
               deviceType={deviceType}
               isHeader
-              style={headerStyle}
+              style={{
+                flexShrink: 0,
+                position: 'sticky',
+                top: 0,
+                zIndex: 10,
+              }}
             />
           )}
         </div>
@@ -111,5 +87,8 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
 
 export const RenderModal: React.FC<any> = () => {
   const { data: dataModal } = useGetModalUI();
-  return _.map(dataModal, (item) => <Modal key={item?._id} data={item} false></Modal>);
+
+  return _.map(dataModal, (item) => (
+    <Modal key={item?._id} data={item.layoutJson[getDeviceType()]} false></Modal>
+  ));
 };

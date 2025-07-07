@@ -7,6 +7,8 @@ import { useActions } from '@/hooks/useActions';
 import { getDeviceType } from '@/lib/utils';
 import { GridItem } from '@/types/gridItem';
 
+import { StyleBox } from './StyleBox';
+
 interface BannerVideoCompoProps {
   data?: GridItem;
   style?: CSSProperties;
@@ -28,7 +30,8 @@ const BannerVideo = ({ data, style }: BannerVideoCompoProps) => {
   const { handleAction } = useActions();
   if (!isVideo(url)) return <div style={newStyle}>Unsupported media type</div>;
   return (
-    <video
+    <StyleBox
+      as="video"
       autoPlay
       loop
       muted
@@ -42,7 +45,7 @@ const BannerVideo = ({ data, style }: BannerVideoCompoProps) => {
       <source src={url} type="video/mp4" />
       <source src={url.replace(/\.\w+$/, '.webm')} type="video/webm" />
       Your browser does not support the video tag.
-    </video>
+    </StyleBox>
   );
 };
 

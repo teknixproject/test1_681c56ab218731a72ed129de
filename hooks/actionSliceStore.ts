@@ -6,12 +6,15 @@ import { TAction, TTriggerActions, TTriggerValue } from '@/types';
 type TState = {
   actions: TTriggerActions;
   triggerName: TTriggerValue;
+  formData: any;
 };
 type TActions = {
   setActions: (actions: TTriggerActions) => void;
   setTriggerName: (triggerName: TTriggerValue) => void;
-  setMultipleActions: (data: TState) => void;
+  setMultipleActions: (data: Partial<TState>) => Promise<void>;
+  getFormData: () => any;
   findAction: (actionId: string) => TAction | undefined;
+  setFormData: (formData: any) => void;
   reset: () => void;
 };
 export const actionHookSliceStore = create<TState & TActions>()(
@@ -24,10 +27,13 @@ export const actionHookSliceStore = create<TState & TActions>()(
       findAction: (actionId: string) => {
         return get().actions[get().triggerName]?.[actionId] || undefined;
       },
-      setMultipleActions(data) {
+      getFormData: () => get().formData,
+      setFormData: (formData: any) => set(() => ({ formData })),
+      async setMultipleActions(data) {
         set(() => ({
           actions: data.actions,
           triggerName: data.triggerName,
+          formData: data.formData,
         }));
       },
       reset: () => set(() => ({ actions: {}, triggerName: 'onClick' })),

@@ -7,12 +7,13 @@ import { stateManagementStore } from '@/stores';
 import { customFunctionStore } from '@/stores/customFunction';
 import { TConditionalChild, TConditionChildMap, TTypeSelect, TVariable } from '@/types';
 import { TData, TDataField, TOptionApiResponse } from '@/types/dataItem';
+import { transformVariable } from '@/uitls/tranformVariable';
 
 import { handleCustomFunction } from './handleCustomFunction';
 
 type UseHandleDataReturn = {
   dataState?: any;
-  getData: (data: TData | null | undefined) => any;
+  getData: (data: TData | null | undefined, valueStream?: any) => any;
 };
 
 const getRootConditionChild = (condition: TConditionChildMap): TConditionalChild | undefined => {
@@ -58,7 +59,6 @@ export const useHandleData = (props: TUseHandleData): UseHandleDataReturn => {
               json: value?.value,
               path: getData(item.jsonPath as TData) || '',
             });
-            console.log('🚀 ~ useHandleData ~ valueJsonPath:', valueJsonPath);
             return valueJsonPath?.[0];
           case 'statusCode':
             return value?.statusCode;
@@ -71,7 +71,13 @@ export const useHandleData = (props: TUseHandleData): UseHandleDataReturn => {
           case 'exceptionMessage':
             return value?.message;
           default:
-            return String(value) || data.defaultValue;
+            return (
+              value?.value ||
+              transformVariable({
+                ...variable!,
+                value: data.defaultValue,
+              })
+            );
         }
       };
 
@@ -81,7 +87,6 @@ export const useHandleData = (props: TUseHandleData): UseHandleDataReturn => {
           option as NonNullable<TDataField<TOptionApiResponse>['options']>[number],
           value
         );
-        console.log('🚀 ~ useHandleData ~ value:', { value, option });
       }
       if (_.isEmpty(variable)) return data.defaultValue;
       return value;
@@ -230,7 +235,13 @@ export const useHandleData = (props: TUseHandleData): UseHandleDataReturn => {
             case 'isNotEmpty':
               return !_.isEmpty(value);
             default:
-              return String(value) || data?.defaultValue;
+              return (
+                value ||
+                transformVariable({
+                  ...variable!,
+                  value: data.defaultValue,
+                })
+              );
           }
         }
 
@@ -241,28 +252,110 @@ export const useHandleData = (props: TUseHandleData): UseHandleDataReturn => {
   );
 
   //#region handle item list
-  const handleItemInList = (data: TData) => {
+  const handleItemInList = (data: TData, valueStream: any) => {
     const { jsonPath } = data.itemInList;
     if (jsonPath) {
       const result = JSONPath({
-        json: itemInList.current,
+        json: valueStream || itemInList.current,
         path: jsonPath || '',
       })?.[0];
       return result;
     }
-    return itemInList.current;
+    return valueStream || itemInList.current;
   };
 
   //#region handle custom function
+  //#region handle dynamic generate
+  const handleDynamicGenerate = (data: TData) => {
+    const state = data[data.type] as TDataField;
+    const dynamicItem = data.temp;
+
+    let value = dynamicItem;
+
+    for (const option of state?.options || []) {
+      const optionItem = option as NonNullable<TDataField['options']>[number];
+
+      switch (optionItem.option) {
+        case 'jsonPath':
+          const jsonPathValue = getData(optionItem.jsonPath as TData);
+          const valueJsonPath = JSONPath({
+            json: value,
+            path: jsonPathValue || '',
+          });
+          value = valueJsonPath?.[0];
+          break;
+
+        case 'itemAtIndex':
+          const index = getData(optionItem?.itemAtIndex as TData);
+          let indexValid: number = 0;
+          if (typeof index !== 'number') {
+            indexValid = parseInt(index);
+          }
+          value = value[indexValid];
+          break;
+
+        case 'filter':
+          if (Array.isArray(value)) {
+            value = value.filter((item: any) => {
+              itemInList.current = item;
+              const result = getConditionValue(
+                optionItem.filterCondition?.data as TConditionChildMap
+              );
+              return result;
+            });
+          }
+          break;
+
+        case 'sort':
+          if (Array.isArray(value)) {
+            const sortOption = optionItem.sortOrder || 'asc';
+            const jsonPath = getData(optionItem.jsonPath as TData);
+
+            value = [...value].sort((a: any, b: any) => {
+              let aVal = a;
+              let bVal = b;
+
+              if (jsonPath) {
+                const aJsonPath = JSONPath({ json: a, path: jsonPath });
+                const bJsonPath = JSONPath({ json: b, path: jsonPath });
+                aVal = aJsonPath[0];
+                bVal = bJsonPath[0];
+              }
+
+              if (sortOption === 'asc') {
+                return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+              } else {
+                return bVal > aVal ? 1 : bVal < aVal ? -1 : 0;
+              }
+            });
+          }
+          break;
+
+        case 'length':
+          return value?.length || 0;
+        case 'isEmpty':
+          return _.isEmpty(value);
+        case 'isNotEmpty':
+          return !_.isEmpty(value);
+        default:
+          return value || data?.defaultValue;
+      }
+    }
+
+    return value;
+  };
+
   //#region getData
   const getData = useCallback(
-    (data: TData | null | undefined): any => {
-      if (_.isEmpty(data)) return;
+    (data: TData | null | undefined, valueStream?: any): any => {
+      if (_.isEmpty(data)) return '';
       if (!data || !data.type) return data?.defaultValue;
 
       switch (data.type) {
         case 'valueInput':
           return handleInputValue(data.valueInput);
+        case 'dynamicGenerate':
+          return handleDynamicGenerate(data);
         case 'apiResponse':
           return handleApiResponse(data);
         case 'appState':
@@ -274,7 +367,7 @@ export const useHandleData = (props: TUseHandleData): UseHandleDataReturn => {
         case 'combineText':
           return data.combineText;
         case 'itemInList':
-          return handleItemInList(data);
+          return handleItemInList(data, valueStream);
         case 'customFunction':
           return handleCustomFunction({ data: data.customFunction, findCustomFunction, getData });
         default:

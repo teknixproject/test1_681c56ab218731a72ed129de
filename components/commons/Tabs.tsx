@@ -10,13 +10,12 @@ import { RenderSlice } from '../grid-systems';
 
 interface TabsProps {
   id: string;
-  style?: any;
   data?: any;
   childs?: any[];
   menuClassDropdow?: any;
 }
 
-const Tabs = ({ id, style = '', data = {}, childs = [] }: TabsProps) => {
+const Tabs = ({ id, data = {}, childs = [] }: TabsProps) => {
   const [activeTab, setActiveTab] = useState<string>();
 
   const tabs = _.get(data, 'dataSlice.tabs');

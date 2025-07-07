@@ -48,6 +48,9 @@ export const PreviewUI: FC = () => {
     return <LoadingPage />;
   }
 
+  if (!selectedBodyLayout && !isPage) {
+    return <></>;
+  }
   return (
     <div className="component-preview-container">
       {isPage && !customWidgetName ? (

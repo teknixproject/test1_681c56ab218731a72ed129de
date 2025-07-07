@@ -1,5 +1,6 @@
 'use client';
 
+import { Button as ButtonAntd } from 'antd';
 import { CSSProperties } from 'react';
 
 import { useActions } from '@/hooks/useActions';
@@ -12,18 +13,18 @@ interface ButtonCompoProps {
 }
 
 const Button = ({ data, style }: ButtonCompoProps) => {
+  const { handleAction } = useActions(data);
   const { dataState } = useHandleData({ dataProp: data?.data });
 
-  const { handleAction } = useActions(data);
   return (
-    <button
+    <ButtonAntd
       onClick={() => handleAction('onClick')}
-      type="button"
       className="cursor-pointer"
       style={style}
+    // styledComponentCss={data?.styledComponentCss}
     >
-      {dataState || 'Button'}
-    </button>
+      {dataState || 'Button 123'}
+    </ButtonAntd>
   );
 };
 

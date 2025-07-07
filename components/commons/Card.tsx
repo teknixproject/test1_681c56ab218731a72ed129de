@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import Image from 'next/image';
 import React from 'react';
-import styled, { css, CSSProperties } from 'styled-components';
+import { CSSProperties } from 'styled-components';
 
 import { useActions } from '@/hooks/useActions';
 import { useHandleData } from '@/hooks/useHandleData';
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { GridItem } from '@/types/gridItem';
 
 import { RenderSlice } from '../grid-systems';
+import { StyleBox } from './StyleBox';
 
 interface CardProps {
   data: GridItem;
@@ -36,8 +37,7 @@ const Card: React.FC<CardProps> = ({ data, style }) => {
     : dataState;
 
   return (
-    <Container
-      className="bg-gray-950 p-5"
+    <StyleBox
       style={newStyle}
       onClick={() => handleAction('onClick')}
       onChange={() => handleAction('onChange')}
@@ -54,25 +54,8 @@ const Card: React.FC<CardProps> = ({ data, style }) => {
         />
         <div className="z-1 text-center text-white">{content}</div>
       </div>
-    </Container>
+    </StyleBox>
   );
 };
-
-interface StylesProps {
-  style?: {
-    hover?: CSSProperties;
-    [key: string]: any;
-  };
-  styledComponentCss?: string;
-}
-
-const Container = styled.div<StylesProps>`
-  ${(props) =>
-    props.styledComponentCss
-      ? css`
-          ${props.styledComponentCss}
-        `
-      : ''}
-`;
 
 export default Card;
